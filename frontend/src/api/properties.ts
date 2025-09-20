@@ -1,7 +1,7 @@
 ﻿import { saveAs } from 'file-saver';
 
 import { apiClient } from './client';
-import type { PropertyFilters, PropertyListResponse } from '../types/property';
+import type { LeadPackResponse, PropertyFilters, PropertyListResponse } from '../types/property';
 
 type FilterInput = Partial<PropertyFilters>;
 
@@ -32,7 +32,7 @@ export const fetchProperties = async (filters: FilterInput): Promise<PropertyLis
   return data;
 };
 
-export const downloadPropertyExport = async (filters: FilterInput): Promise<void> => {
+export const downloadPropertyExport = async (filters: FilterInput): Promise<number> => {
   const params = sanitizeFilters(filters);
   const response = await apiClient.get<Blob>('/properties/export', {
     params,
@@ -40,4 +40,14 @@ export const downloadPropertyExport = async (filters: FilterInput): Promise<void
   });
   const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
   saveAs(blob, 'lead-radar-export.csv');
+  const countHeader = response.headers['x-property-count'];
+  return countHeader ? Number(countHeader) || 0 : 0;
+};
+
+export const fetchLeadPacks = async (filters: FilterInput, groupBy = 'postal_code', packSize = 200): Promise<LeadPackResponse> => {
+  const params = sanitizeFilters(filters);
+  params.group_by = groupBy;
+  params.pack_size = packSize;
+  const { data } = await apiClient.get<LeadPackResponse>('/properties/packs', { params });
+  return data;
 };

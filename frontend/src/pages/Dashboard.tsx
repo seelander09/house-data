@@ -1,4 +1,5 @@
-﻿import {
+import { useState } from 'react';
+import {
   Alert,
   AlertDescription,
   AlertIcon,
@@ -11,19 +12,27 @@
   HStack,
   Spacer,
   Text,
+  useDisclosure,
 } from '@chakra-ui/react';
-import { FiRefreshCw } from 'react-icons/fi';
+import { FiRefreshCw, FiSend, FiTarget } from 'react-icons/fi';
 
 import { usePropertiesQuery } from '../api/hooks';
 import { ExportButton } from '../components/ExportButton';
 import { FilterBar } from '../components/FilterBar';
+import { LeadPackPanel } from '../components/LeadPackPanel';
 import { MetricsSummary } from '../components/MetricsSummary';
+import { OutreachDrawer } from '../components/OutreachDrawer';
 import { PropertyTable } from '../components/PropertyTable';
 import { usePropertyFilters } from '../store/filterStore';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 export const Dashboard = () => {
   const { filters } = usePropertyFilters();
-  const { data, error, isLoading, isFetching, refetch } = usePropertiesQuery(filters);
+  const debouncedFilters = useDebouncedValue(filters, 350);
+  const { isOpen: isLeadPackOpen, onOpen: openLeadPack, onClose: closeLeadPack } = useDisclosure();
+  const { isOpen: isOutreachOpen, onOpen: openOutreach, onClose: closeOutreach } = useDisclosure();
+
+  const { data, error, isLoading, isFetching, refetch } = usePropertiesQuery(debouncedFilters);
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
@@ -43,12 +52,18 @@ export const Dashboard = () => {
 
           <FilterBar />
 
-          <Flex align="center">
+          <Flex align="center" wrap="wrap" gap={3}>
             <HStack spacing={3}>
               <Button leftIcon={<FiRefreshCw />} variant="ghost" onClick={() => refetch()} isLoading={isFetching}>
                 Refresh
               </Button>
               <ExportButton />
+              <Button leftIcon={<FiTarget />} variant="outline" onClick={openLeadPack}>
+                Lead packs
+              </Button>
+              <Button leftIcon={<FiSend />} variant="outline" onClick={openOutreach}>
+                Outreach scripts
+              </Button>
             </HStack>
             <Spacer />
             <Text color="gray.500" fontSize="sm">
@@ -69,6 +84,9 @@ export const Dashboard = () => {
           <PropertyTable data={items} total={total} isLoading={isLoading || isFetching} />
         </Flex>
       </Container>
+
+      <LeadPackPanel isOpen={isLeadPackOpen} onClose={closeLeadPack} filters={debouncedFilters} />
+      <OutreachDrawer isOpen={isOutreachOpen} onClose={closeOutreach} filters={debouncedFilters} properties={items} />
     </Box>
   );
 };

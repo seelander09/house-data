@@ -68,9 +68,10 @@ The dev server proxies API requests to `http://localhost:8100/api` by default.
 - Frontend: `cd frontend && npm run test -- --run`
 
 ## Key Features
-- Real-time property scoring based on equity, value gaps, and transfer recency.
-- Search and filter interface for location and equity thresholds.
-- Lead export (CSV) with owner contact data for outreach workflows.
-- React Query caching plus manual refresh controls for data freshness.
+- Real-time property scoring tuned via configurable weights and background refresh.
+- Advanced filtering: absentee vs owner occupants, value gap thresholds, market/assessed ranges, and radius search.
+- Lead packs API + dashboard drawer for bundling the highest-scoring opportunities per market.
+- Outreach playbook drawer with email/SMS templates and quick call/email actions from the grid.
+- Debounced, preset-aware filters with persistent saved searches for repeat campaigns.
 
 See `docs/architecture.md` for additional technical background and future enhancements.

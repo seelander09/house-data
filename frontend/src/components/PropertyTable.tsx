@@ -1,10 +1,12 @@
-﻿import {
+import {
+  Badge,
   Box,
   Button,
   ButtonGroup,
   Flex,
   HStack,
   Icon,
+  IconButton,
   Spinner,
   Table,
   Tbody,
@@ -12,11 +14,13 @@
   Text,
   Th,
   Thead,
+  Tooltip,
   Tr,
   useColorModeValue,
+  useToast,
 } from '@chakra-ui/react';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { FiHome } from 'react-icons/fi';
+import { FiClipboard, FiHome, FiMail, FiPhone } from 'react-icons/fi';
 
 import { usePropertyFilters } from '../store/filterStore';
 import type { Property } from '../types/property';
@@ -38,6 +42,18 @@ const columns = [
               <Text fontSize="sm" color="gray.500">
                 {[property.city, property.state, property.postal_code].filter(Boolean).join(', ')}
               </Text>
+              <HStack spacing={2} mt={1}>
+                {property.owner_occupancy && (
+                  <Badge colorScheme={property.owner_occupancy === 'absentee' ? 'orange' : 'green'}>
+                    {property.owner_occupancy === 'absentee' ? 'Absentee owner' : 'Owner occupied'}
+                  </Badge>
+                )}
+                {property.distance_from_search_center_miles != null && (
+                  <Badge colorScheme="purple">
+                    {property.distance_from_search_center_miles.toFixed(1)} mi radius
+                  </Badge>
+                )}
+              </HStack>
             </Box>
           </HStack>
         </Flex>
@@ -49,6 +65,13 @@ const columns = [
     cell: (info) => {
       const value = info.getValue<number | null | undefined>() ?? 0;
       return <Text>{`$${value.toLocaleString()}`}</Text>;
+    },
+  }),
+  columnHelper.accessor('value_gap', {
+    header: 'Value Gap',
+    cell: (info) => {
+      const value = info.getValue<number | null | undefined>();
+      return <Text>{value ? `$${Math.round(value).toLocaleString()}` : '--'}</Text>;
     },
   }),
   columnHelper.accessor((row) => row.total_market_value ?? row.model_value ?? null, {
@@ -74,22 +97,40 @@ const columns = [
     header: 'Owner',
     cell: (info) => {
       const owner = info.row.original.owner;
+      const toast = info.table.options.meta?.toast;
+      const handleLog = () => {
+        toast?.({ title: 'Outreach logged', status: 'success', duration: 2000 });
+      };
+
       return (
         <Box>
           <Text fontWeight="medium">{owner.name ?? 'Unknown'}</Text>
           <Text fontSize="sm" color="gray.500">
             {[owner.address_line1, owner.city, owner.state, owner.postal_code].filter(Boolean).join(', ')}
           </Text>
-          {owner.phone ? (
-            <Text fontSize="sm" color="gray.500">
-              Phone: {owner.phone}
-            </Text>
-          ) : null}
-          {owner.email ? (
-            <Text fontSize="sm" color="gray.500">
-              Email: {owner.email}
-            </Text>
-          ) : null}
+          <ButtonGroup size="sm" variant="ghost" mt={2}>
+            <Tooltip label={owner.phone ? `Call ${owner.phone}` : 'No phone on file'}>
+              <IconButton
+                aria-label="Call owner"
+                icon={<FiPhone />}
+                as={owner.phone ? 'a' : 'button'}
+                href={owner.phone ? `tel:${owner.phone}` : undefined}
+                isDisabled={!owner.phone}
+              />
+            </Tooltip>
+            <Tooltip label={owner.email ? `Email ${owner.email}` : 'No email on file'}>
+              <IconButton
+                aria-label="Email owner"
+                icon={<FiMail />}
+                as={owner.email ? 'a' : 'button'}
+                href={owner.email ? `mailto:${owner.email}` : undefined}
+                isDisabled={!owner.email}
+              />
+            </Tooltip>
+            <Tooltip label="Log outreach touch">
+              <IconButton aria-label="Log outreach" icon={<FiClipboard />} onClick={handleLog} />
+            </Tooltip>
+          </ButtonGroup>
         </Box>
       );
     },
@@ -103,7 +144,13 @@ interface PropertyTableProps {
 }
 
 export const PropertyTable = ({ data, total, isLoading }: PropertyTableProps) => {
-  const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+  const toast = useToast();
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    meta: { toast },
+  });
   const { filters, setOffset } = usePropertyFilters();
   const bg = useColorModeValue('white', 'gray.800');
 

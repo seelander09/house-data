@@ -21,6 +21,15 @@ class Settings(BaseSettings):
         alias='CORS_ALLOW_ORIGINS',
     )
 
+    cache_backend: str = Field(default='memory', alias='CACHE_BACKEND')
+    redis_url: str | None = Field(default=None, alias='REDIS_URL')
+    cache_namespace: str = Field(default='lead-radar', alias='CACHE_NAMESPACE')
+    refresh_interval_seconds: int = Field(default=900, alias='REFRESH_INTERVAL_SECONDS')
+    enable_scheduler: bool = Field(default=True, alias='ENABLE_SCHEDULER')
+    scoring_equity_weight: float = Field(default=0.45, alias='SCORING_EQUITY_WEIGHT')
+    scoring_value_gap_weight: float = Field(default=0.35, alias='SCORING_VALUE_GAP_WEIGHT')
+    scoring_recency_weight: float = Field(default=0.20, alias='SCORING_RECENCY_WEIGHT')
+
     model_config = SettingsConfigDict(
         env_file=('.env',), env_file_encoding='utf-8', extra='ignore', env_parse_delimiter=','
     )

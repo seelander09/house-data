@@ -1,5 +1,23 @@
-﻿import { act } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { act } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const createStorageMock = () => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+  };
+};
+
+vi.stubGlobal('localStorage', createStorageMock());
 
 import { usePropertyFilters } from '../filterStore';
 
