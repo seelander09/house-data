@@ -102,14 +102,22 @@ export const LeadPackPanel = ({ isOpen, onClose, filters }: LeadPackPanelProps) 
                 </Select>
               </FormControlGroup>
               <FormControlGroup label="Top listings per pack">
-                <NumberInput value={packSize} min={10} max={500} onChange={(_s, value) => setPackSize(() => {\n                  if (Number.isNaN(value)) return 50;\n                  return Math.min(500, Math.max(10, Math.round(value)));\n                })}>
+                <NumberInput
+                  value={packSize}
+                  min={10}
+                  max={500}
+                  onChange={(_valueAsString, valueAsNumber) => {
+                    const next = Number.isNaN(valueAsNumber) ? 50 : Math.round(valueAsNumber);
+                    setPackSize(Math.min(500, Math.max(10, next)));
+                  }}
+                >
                   <NumberInputField />
                 </NumberInput>
               </FormControlGroup>
               {isFetching && (
                 <HStack color="gray.500">
                   <Spinner size="sm" />
-                  <Text fontSize="sm">Refreshing packs…</Text>
+                  <Text fontSize="sm">Refreshing packs...</Text>
                 </HStack>
               )}
             </Flex>
@@ -117,7 +125,7 @@ export const LeadPackPanel = ({ isOpen, onClose, filters }: LeadPackPanelProps) 
             {isLoading ? (
               <Flex align="center" justify="center" h="200px" direction="column" gap={3}>
                 <Spinner size="lg" />
-                <Text color="gray.500">Crunching scores…</Text>
+                <Text color="gray.500">Crunching scores...</Text>
               </Flex>
             ) : !data || data.packs.length === 0 ? (
               <Text color="gray.500">No lead packs match the current filters.</Text>
