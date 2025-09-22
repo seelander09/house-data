@@ -8,6 +8,7 @@ export const apiClient = axios.create({
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
+    'X-Account-Id': import.meta.env.VITE_ACCOUNT_ID ?? 'demo-account',
   },
 });
 

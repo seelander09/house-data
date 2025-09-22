@@ -1,9 +1,22 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { downloadPropertyExport, fetchLeadPacks, fetchProperties } from './properties';
-import { fetchPlanSnapshot, fetchUsageSummary } from './usage';
+import {
+  fetchPlanCatalog,
+  fetchPlanSnapshot,
+  fetchRecentAlerts,
+  fetchUsageHistory,
+  fetchUsageSummary,
+  selectPlan,
+} from './usage';
 import type { LeadPackResponse, PropertyFilters, PropertyListResponse } from '../types/property';
-import type { PlanSnapshot, UsageSummaryItem } from '../types/usage';
+import type {
+  PlanDefinition,
+  PlanSnapshot,
+  UsageAlertItem,
+  UsageHistoryItem,
+  UsageSummaryItem,
+} from '../types/usage';
 
 export const propertiesQueryKey = (filters: PropertyFilters) => [
   'properties',
@@ -62,4 +75,36 @@ export const usePlanSnapshotQuery = () =>
     queryFn: fetchPlanSnapshot,
     staleTime: 60_000,
     refetchInterval: 60_000,
+  });
+
+export const usageHistoryQueryKey = (days: number) => ['usage-history', days] as const;
+
+export const useUsageHistoryQuery = (days = 30) =>
+  useQuery<UsageHistoryItem[]>({
+    queryKey: usageHistoryQueryKey(days),
+    queryFn: () => fetchUsageHistory(days),
+    staleTime: 60_000,
+  });
+
+export const usageAlertsQueryKey = (limit: number) => ['usage-alerts', limit] as const;
+
+export const useUsageAlertsQuery = (limit = 10) =>
+  useQuery<UsageAlertItem[]>({
+    queryKey: usageAlertsQueryKey(limit),
+    queryFn: () => fetchRecentAlerts(limit),
+    staleTime: 30_000,
+  });
+
+export const planCatalogQueryKey = ['plan-catalog'] as const;
+
+export const usePlanCatalogQuery = () =>
+  useQuery<PlanDefinition[]>({
+    queryKey: planCatalogQueryKey,
+    queryFn: fetchPlanCatalog,
+    staleTime: 300_000,
+  });
+
+export const useSelectPlanMutation = () =>
+  useMutation({
+    mutationFn: (planName: string) => selectPlan(planName),
   });

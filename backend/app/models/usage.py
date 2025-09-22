@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
+from typing import Dict
 
 from pydantic import BaseModel, Field
 
@@ -32,5 +33,33 @@ class PlanAlert(BaseModel):
 
 class PlanSnapshot(BaseModel):
     plan_name: str
+    plan_display_name: str
     quotas: list[PlanQuota] = Field(default_factory=list)
     alerts: list[PlanAlert] = Field(default_factory=list)
+
+
+class PlanDefinition(BaseModel):
+    name: str
+    display_name: str
+    description: str
+    price: str
+    limits: Dict[str, int]
+
+
+class PlanSelectionRequest(BaseModel):
+    plan_name: str = Field(description='Plan identifier to subscribe to')
+
+
+class UsageHistoryEntry(BaseModel):
+    date: date
+    event_type: str
+    count: int
+
+
+class UsageAlertRecord(BaseModel):
+    event_type: str
+    status: str
+    message: str
+    account_id: str | None = None
+    created_at: datetime
+

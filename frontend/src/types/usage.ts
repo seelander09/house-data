@@ -21,6 +21,29 @@ export interface PlanAlert {
 
 export interface PlanSnapshot {
   plan_name: string;
+  plan_display_name: string;
   quotas: PlanQuota[];
   alerts: PlanAlert[];
+}
+
+export interface PlanDefinition {
+  name: string;
+  display_name: string;
+  description: string;
+  price: string;
+  limits: Record<string, number>;
+}
+
+export interface UsageHistoryItem {
+  date: string;
+  event_type: string;
+  count: number;
+}
+
+export interface UsageAlertItem {
+  event_type: string;
+  status: string;
+  message: string;
+  account_id?: string | null;
+  created_at: string;
 }

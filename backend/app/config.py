@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     plan_export_limit: int = Field(default=500, alias='PLAN_EXPORT_LIMIT')
     plan_lead_pack_limit: int = Field(default=120, alias='PLAN_LEAD_PACK_LIMIT')
     plan_refresh_limit: int = Field(default=60, alias='PLAN_REFRESH_LIMIT')
+    plan_catalog_json: str | None = Field(default=None, alias='PLAN_CATALOG_JSON')
+    alert_webhook_url: str | None = Field(default=None, alias='ALERT_WEBHOOK_URL')
+    alert_email: str | None = Field(default=None, alias='ALERT_EMAIL')
+    alert_min_interval_minutes: int = Field(default=60, alias='ALERT_MIN_INTERVAL_MINUTES')
 
     model_config = SettingsConfigDict(
         env_file=('.env',), env_file_encoding='utf-8', extra='ignore', env_parse_delimiter=','

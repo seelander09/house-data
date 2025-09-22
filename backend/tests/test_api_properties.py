@@ -38,6 +38,18 @@ class _NoopUsageService:
     async def get_plan_snapshot(self, *args, **kwargs):  # noqa: D401
         return None
 
+    async def get_usage_history(self, *args, **kwargs):  # noqa: D401
+        return []
+
+    async def get_recent_alerts(self, *args, **kwargs):  # noqa: D401
+        return []
+
+    async def get_plan_catalog(self, *args, **kwargs):  # noqa: D401
+        return []
+
+    async def set_plan_for_account(self, *args, **kwargs):  # noqa: D401
+        return None
+
 
 class _LimitedUsageService(_NoopUsageService):
     async def ensure_within_plan(self, *args, **kwargs) -> None:  # noqa: D401

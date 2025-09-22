@@ -58,7 +58,7 @@ export const PlanUsageCard = ({ plan, isLoading }: PlanUsageCardProps) => {
         <Box>
           <Heading size="sm">Plan usage</Heading>
           <Text fontSize="sm" color="gray.500">
-            {plan.plan_name.toUpperCase()} · Rolling {plan.quotas[0]?.window_days ?? 30}-day window
+            {plan.plan_display_name} · rolling {plan.quotas[0]?.window_days ?? 30}-day window
           </Text>
         </Box>
         <Badge colorScheme="purple">{plan.plan_name}</Badge>

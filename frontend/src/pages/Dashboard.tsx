@@ -22,8 +22,10 @@ import { FilterBar } from '../components/FilterBar';
 import { LeadPackPanel } from '../components/LeadPackPanel';
 import { MetricsSummary } from '../components/MetricsSummary';
 import { OutreachDrawer } from '../components/OutreachDrawer';
+import { PlanManager } from '../components/PlanManager';
 import { PlanUsageCard } from '../components/PlanUsageCard';
 import { PropertyTable } from '../components/PropertyTable';
+import { UsageInsightsCard } from '../components/UsageInsightsCard';
 import { usePropertyFilters } from '../store/filterStore';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
@@ -56,7 +58,16 @@ export const Dashboard = () => {
 
           <FilterBar />
 
-          <PlanUsageCard plan={planSnapshot} isLoading={isPlanLoading} />
+          <Flex direction={{ base: 'column', lg: 'row' }} gap={4}>
+            <Box flex="1">
+              <PlanUsageCard plan={planSnapshot} isLoading={isPlanLoading} />
+            </Box>
+            <Box flex="1">
+              <PlanManager />
+            </Box>
+          </Flex>
+
+          <UsageInsightsCard historyDays={21} alertLimit={5} />
 
           <Flex align="center" wrap="wrap" gap={3}>
             <HStack spacing={3}>
