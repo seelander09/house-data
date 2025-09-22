@@ -21,6 +21,7 @@ import {
   Text,
   useToast,
 } from '@chakra-ui/react';
+import { isAxiosError } from 'axios';
 import { FiDownload } from 'react-icons/fi';
 
 import { useExportProperties, useLeadPacksQuery } from '../api/hooks';
@@ -56,7 +57,7 @@ export const LeadPackPanel = ({ isOpen, onClose, filters }: LeadPackPanelProps) 
     [filters],
   );
 
-  const { data, isLoading, isFetching } = useLeadPacksQuery(normalizedFilters, groupBy, packSize, isOpen);
+  const { data, isLoading, isFetching, error } = useLeadPacksQuery(normalizedFilters, groupBy, packSize, isOpen);
 
   const handleExportPack = async (label: string) => {
     const payload: Partial<PropertyFilters> = {
@@ -77,8 +78,14 @@ export const LeadPackPanel = ({ isOpen, onClose, filters }: LeadPackPanelProps) 
         status: 'success',
         duration: 3000,
       });
-    } catch (error) {
-      toast({ title: 'Export failed', description: 'Unable to export this pack right now.', status: 'error' });
+    } catch (err) {
+      const detail = isAxiosError(err) && err.response?.status === 429 ? (err.response.data as { detail?: string })?.detail : null;
+      toast({
+        title: 'Export failed',
+        description: detail ?? 'Unable to export this pack right now.',
+        status: 'error',
+        duration: 4000,
+      });
     }
   };
 
@@ -127,6 +134,12 @@ export const LeadPackPanel = ({ isOpen, onClose, filters }: LeadPackPanelProps) 
                 <Spinner size="lg" />
                 <Text color="gray.500">Crunching scores...</Text>
               </Flex>
+            ) : error ? (
+              <Text color="red.500">
+                {isAxiosError(error) && error.response?.status === 429
+                  ? (error.response.data as { detail?: string })?.detail ?? 'Lead pack limit reached for your plan.'
+                  : 'Unable to load lead packs right now.'}
+              </Text>
             ) : !data || data.packs.length === 0 ? (
               <Text color="gray.500">No lead packs match the current filters.</Text>
             ) : (

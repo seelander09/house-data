@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.routes import properties
+from .api.routes import properties, usage
 from .config import get_settings
 from .dependencies import get_property_service
 
@@ -40,3 +40,4 @@ async def health_check() -> dict[str, str]:
 
 
 app.include_router(properties.router, prefix='/api')
+app.include_router(usage.router, prefix='/api')

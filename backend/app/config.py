@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     scoring_equity_weight: float = Field(default=0.45, alias='SCORING_EQUITY_WEIGHT')
     scoring_value_gap_weight: float = Field(default=0.35, alias='SCORING_VALUE_GAP_WEIGHT')
     scoring_recency_weight: float = Field(default=0.20, alias='SCORING_RECENCY_WEIGHT')
+    enable_usage_tracking: bool = Field(default=True, alias='ENABLE_USAGE_TRACKING')
+    usage_db_path: str = Field(default='output/usage.db', alias='USAGE_DB_PATH')
+    plan_name: str = Field(default='growth', alias='PLAN_NAME')
+    plan_window_days: int = Field(default=30, alias='PLAN_WINDOW_DAYS')
+    plan_export_limit: int = Field(default=500, alias='PLAN_EXPORT_LIMIT')
+    plan_lead_pack_limit: int = Field(default=120, alias='PLAN_LEAD_PACK_LIMIT')
+    plan_refresh_limit: int = Field(default=60, alias='PLAN_REFRESH_LIMIT')
 
     model_config = SettingsConfigDict(
         env_file=('.env',), env_file_encoding='utf-8', extra='ignore', env_parse_delimiter=','

@@ -4,8 +4,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings
+from app.dependencies import get_property_service, get_usage_service
 from app.main import app
 from app.services.properties import PropertyService
+from app.services.usage import UsageLimitError
 from tests.test_properties_service import DummyRealieClient, SAMPLE_PROPERTIES
 
 
@@ -19,13 +21,35 @@ def _build_service() -> PropertyService:
     return PropertyService(client=DummyRealieClient(), settings=settings)
 
 
+class _NoopUsageService:
+    async def log_event(self, *args, **kwargs) -> None:  # noqa: D401
+        return None
+
+    async def get_summary(self, *args, **kwargs) -> list:  # noqa: D401
+        return []
+
+    @property
+    def enabled(self) -> bool:  # noqa: D401
+        return False
+
+    async def ensure_within_plan(self, *args, **kwargs) -> None:  # noqa: D401
+        return None
+
+    async def get_plan_snapshot(self, *args, **kwargs):  # noqa: D401
+        return None
+
+
+class _LimitedUsageService(_NoopUsageService):
+    async def ensure_within_plan(self, *args, **kwargs) -> None:  # noqa: D401
+        raise UsageLimitError('Plan usage limit reached')
+
+
 @pytest.fixture
 def client():
     service = _build_service()
-
-    from app.dependencies import get_property_service
-
+    usage_service = _NoopUsageService()
     app.dependency_overrides[get_property_service] = lambda: service
+    app.dependency_overrides[get_usage_service] = lambda: usage_service
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
@@ -66,4 +90,19 @@ def test_lead_packs_endpoint(client: TestClient):
     first_pack = payload['packs'][0]
     assert 'top_properties' in first_pack
     assert first_pack['top_properties']
+
+
+def test_export_respects_plan_limit():
+    service = _build_service()
+    usage = _LimitedUsageService()
+    app.dependency_overrides[get_property_service] = lambda: service
+    app.dependency_overrides[get_usage_service] = lambda: usage
+
+    try:
+        with TestClient(app) as test_client:
+            response = test_client.get('/api/properties/export')
+        assert response.status_code == 429
+        assert 'Plan usage limit reached' in response.json()['detail']
+    finally:
+        app.dependency_overrides.clear()
 

@@ -73,5 +73,12 @@ The dev server proxies API requests to `http://localhost:8100/api` by default.
 - Lead packs API + dashboard drawer for bundling the highest-scoring opportunities per market.
 - Outreach playbook drawer with email/SMS templates and quick call/email actions from the grid.
 - Debounced, preset-aware filters with persistent saved searches for repeat campaigns.
+- Usage metering captures exports, lead packs, and cache refreshes with `/api/usage/summary` plus plan-aware `/api/usage/plan` snapshots for billing analytics.
+
+## Usage Metering & Plans
+- Attach optional `X-Account-Id`/`X-User-Id` headers to requests to scope metering data per organisation or seat.
+- Plan quotas are enforced on lead-pack generation, exports, and cache refreshes. Limits return `429` responses with descriptive messaging.
+- Retrieve plan health (including alerts when you are within 10% of a limit) via `GET /api/usage/plan`.
+- React dashboard surfaces plan usage, disables quota-bound actions, and surfaces alerts as quotas tighten.
 
 See `docs/architecture.md` for additional technical background and future enhancements.

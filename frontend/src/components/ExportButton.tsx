@@ -1,13 +1,18 @@
 import { Button, useToast } from '@chakra-ui/react';
+import { isAxiosError } from 'axios';
 import { FiDownload } from 'react-icons/fi';
 
-import { useExportProperties } from '../api/hooks';
+import { useExportProperties, usePlanSnapshotQuery } from '../api/hooks';
 import { usePropertyFilters } from '../store/filterStore';
 
 export const ExportButton = () => {
   const toast = useToast();
   const { filters } = usePropertyFilters();
   const exportMutation = useExportProperties();
+  const { data: planSnapshot } = usePlanSnapshotQuery();
+
+  const exportQuota = planSnapshot?.quotas.find((quota) => quota.event_type === 'properties.export');
+  const exportLimitReached = (exportQuota?.remaining ?? 1) <= 0;
 
   const handleExport = async () => {
     try {
@@ -23,7 +28,12 @@ export const ExportButton = () => {
         duration: 3000,
       });
     } catch (error) {
-      toast({ title: 'Export failed', description: 'Unable to export right now. Try again shortly.', status: 'error' });
+      let description = 'Unable to export right now. Try again shortly.';
+      if (isAxiosError(error) && error.response?.status === 429) {
+        const detail = (error.response.data as { detail?: string })?.detail;
+        description = detail ?? 'Plan usage limit reached for exports.';
+      }
+      toast({ title: 'Export failed', description, status: 'error', duration: 4000 });
     }
   };
 
@@ -34,6 +44,8 @@ export const ExportButton = () => {
       variant="solid"
       onClick={handleExport}
       isLoading={exportMutation.isPending}
+      isDisabled={exportLimitReached}
+      title={exportLimitReached ? 'Export quota reached for your plan' : undefined}
     >
       Export CSV
     </Button>

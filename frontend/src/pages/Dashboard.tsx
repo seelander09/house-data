@@ -16,12 +16,13 @@ import {
 } from '@chakra-ui/react';
 import { FiRefreshCw, FiSend, FiTarget } from 'react-icons/fi';
 
-import { usePropertiesQuery } from '../api/hooks';
+import { usePlanSnapshotQuery, usePropertiesQuery } from '../api/hooks';
 import { ExportButton } from '../components/ExportButton';
 import { FilterBar } from '../components/FilterBar';
 import { LeadPackPanel } from '../components/LeadPackPanel';
 import { MetricsSummary } from '../components/MetricsSummary';
 import { OutreachDrawer } from '../components/OutreachDrawer';
+import { PlanUsageCard } from '../components/PlanUsageCard';
 import { PropertyTable } from '../components/PropertyTable';
 import { usePropertyFilters } from '../store/filterStore';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
@@ -33,9 +34,12 @@ export const Dashboard = () => {
   const { isOpen: isOutreachOpen, onOpen: openOutreach, onClose: closeOutreach } = useDisclosure();
 
   const { data, error, isLoading, isFetching, refetch } = usePropertiesQuery(debouncedFilters);
+  const { data: planSnapshot, isLoading: isPlanLoading } = usePlanSnapshotQuery();
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
+  const leadPackQuota = planSnapshot?.quotas.find((quota) => quota.event_type === 'properties.lead_pack');
+  const leadPackLimitReached = (leadPackQuota?.remaining ?? 1) <= 0;
 
   return (
     <Box bg="gray.100" minH="100vh" py={10}>
@@ -52,13 +56,21 @@ export const Dashboard = () => {
 
           <FilterBar />
 
+          <PlanUsageCard plan={planSnapshot} isLoading={isPlanLoading} />
+
           <Flex align="center" wrap="wrap" gap={3}>
             <HStack spacing={3}>
               <Button leftIcon={<FiRefreshCw />} variant="ghost" onClick={() => refetch()} isLoading={isFetching}>
                 Refresh
               </Button>
               <ExportButton />
-              <Button leftIcon={<FiTarget />} variant="outline" onClick={openLeadPack}>
+              <Button
+                leftIcon={<FiTarget />}
+                variant="outline"
+                onClick={openLeadPack}
+                isDisabled={leadPackLimitReached}
+                title={leadPackLimitReached ? 'Lead pack quota reached for your plan' : undefined}
+              >
                 Lead packs
               </Button>
               <Button leftIcon={<FiSend />} variant="outline" onClick={openOutreach}>

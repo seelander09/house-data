@@ -23,10 +23,17 @@ Score = weighted sum of:
 
 Each factor is normalised per dataset pull with guardrails for missing data (uses medians).
 
+## Usage Tracking & Metering
+- **UsageService** writes metered events (property list/export/lead packs/cache refresh) to a SQLite store defined by `USAGE_DB_PATH`.
+- Events are summarised through `GET /api/usage/summary?days=30`, enabling credit billing dashboards. Optional `X-Account-Id`/`X-User-Id` headers scope events per tenant.
+- Plan enforcement relies on `ENABLE_USAGE_TRACKING` and plan limits in configuration. Quotas are exposed (with warning/limit alerts) at `GET /api/usage/plan` and enforced before exports, lead packs, or cache refreshes execute.
+- Tracking can be toggled with `ENABLE_USAGE_TRACKING` for local development or white-label deployments.
+
 ## Key Modules (Backend)
 - `app/config.py`: Settings + env management.
 - `app/clients/realie.py`: HTTP wrapper with retries/error handling.
 - `app/services/properties.py`: Caching + scoring engine.
+- `app/services/usage.py`: SQLite-backed usage metering service.
 - `app/api/routes/properties.py`: API endpoints and query validation.
 - `app/models.py`: Pydantic models for responses.
 

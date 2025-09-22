@@ -1,7 +1,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { downloadPropertyExport, fetchLeadPacks, fetchProperties } from './properties';
+import { fetchPlanSnapshot, fetchUsageSummary } from './usage';
 import type { LeadPackResponse, PropertyFilters, PropertyListResponse } from '../types/property';
+import type { PlanSnapshot, UsageSummaryItem } from '../types/usage';
 
 export const propertiesQueryKey = (filters: PropertyFilters) => [
   'properties',
@@ -41,4 +43,23 @@ export const useLeadPacksQuery = (
     queryKey: leadPacksQueryKey(filters, groupBy, packSize),
     queryFn: () => fetchLeadPacks(filters, groupBy, packSize),
     enabled,
+  });
+
+export const usageSummaryQueryKey = (days: number) => ['usage-summary', days] as const;
+
+export const useUsageSummaryQuery = (days = 30) =>
+  useQuery<UsageSummaryItem[]>({
+    queryKey: usageSummaryQueryKey(days),
+    queryFn: () => fetchUsageSummary(days),
+    staleTime: 60_000,
+  });
+
+export const planSnapshotQueryKey = ['plan-snapshot'] as const;
+
+export const usePlanSnapshotQuery = () =>
+  useQuery<PlanSnapshot>({
+    queryKey: planSnapshotQueryKey,
+    queryFn: fetchPlanSnapshot,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
   });

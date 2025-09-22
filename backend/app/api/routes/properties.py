@@ -4,18 +4,26 @@ import csv
 import io
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from starlette.responses import StreamingResponse
 
-from ...dependencies import get_property_service
+from ...dependencies import get_property_service, get_usage_service
 from ...models.property import LeadPackResponse, PropertyFilters, PropertyListResponse
 from ...services.properties import PropertyService
+from ...services.usage import UsageLimitError, UsageService
 
 router = APIRouter(prefix='/properties', tags=['properties'])
 
 
+def _usage_context(request: Request) -> tuple[str | None, str | None]:
+    account_id = request.headers.get('x-account-id') or request.headers.get('X-Account-Id')
+    user_id = request.headers.get('x-user-id') or request.headers.get('X-User-Id')
+    return account_id, user_id
+
+
 @router.get('/', response_model=PropertyListResponse)
 async def list_properties(
+    request: Request,
     city: Annotated[str | None, Query(description='City filter (contains match)', min_length=2)] = None,
     state: Annotated[str | None, Query(description='State/region filter', min_length=2)] = None,
     postal_code: Annotated[str | None, Query(description='Postal/zip prefix filter', min_length=3, max_length=10)] = None,
@@ -34,6 +42,7 @@ async def list_properties(
     limit: Annotated[int, Query(ge=1, le=200, description='Maximum records to return')] = 50,
     offset: Annotated[int, Query(ge=0, description='Pagination offset')] = 0,
     service: PropertyService = Depends(get_property_service),
+    usage_service: UsageService = Depends(get_usage_service),
 ) -> PropertyListResponse:
     filters = PropertyFilters(
         city=city,
@@ -58,11 +67,26 @@ async def list_properties(
         filters.normalize_for_radius()
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return await service.list_properties(filters)
+    account_id, user_id = _usage_context(request)
+    response = await service.list_properties(filters)
+    await usage_service.log_event(
+        'properties.list',
+        payload={
+            'limit': filters.limit,
+            'offset': filters.offset,
+            'returned': len(response.items),
+            'filters': filters.model_dump(exclude_none=True),
+        },
+        metadata={'total_available': response.total},
+        account_id=account_id,
+        user_id=user_id,
+    )
+    return response
 
 
 @router.get('/packs', response_model=LeadPackResponse)
 async def get_lead_packs(
+    request: Request,
     city: Annotated[str | None, Query()] = None,
     state: Annotated[str | None, Query()] = None,
     postal_code: Annotated[str | None, Query()] = None,
@@ -81,6 +105,7 @@ async def get_lead_packs(
     group_by: Annotated[str, Query(description='Grouping dimension: postal_code, city, or state')] = 'postal_code',
     pack_size: Annotated[int, Query(ge=1, le=500, description='Max listings per pack')] = 200,
     service: PropertyService = Depends(get_property_service),
+    usage_service: UsageService = Depends(get_usage_service),
 ) -> LeadPackResponse:
     filters = PropertyFilters(
         city=city,
@@ -105,11 +130,30 @@ async def get_lead_packs(
         filters.normalize_for_radius()
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return await service.generate_lead_packs(filters, group_by=group_by, pack_size=pack_size)
+    account_id, user_id = _usage_context(request)
+    try:
+        await usage_service.ensure_within_plan('properties.lead_pack', account_id=account_id)
+    except UsageLimitError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+
+    response = await service.generate_lead_packs(filters, group_by=group_by, pack_size=pack_size)
+    await usage_service.log_event(
+        'properties.lead_pack',
+        payload={
+            'group_by': group_by,
+            'pack_size': pack_size,
+            'filters': filters.model_dump(exclude_none=True),
+            'pack_count': len(response.packs),
+        },
+        account_id=account_id,
+        user_id=user_id,
+    )
+    return response
 
 
 @router.get('/export')
 async def export_properties(
+    request: Request,
     city: Annotated[str | None, Query()] = None,
     state: Annotated[str | None, Query()] = None,
     postal_code: Annotated[str | None, Query()] = None,
@@ -126,6 +170,7 @@ async def export_properties(
     radius_miles: Annotated[float | None, Query()] = None,
     search: Annotated[str | None, Query()] = None,
     service: PropertyService = Depends(get_property_service),
+    usage_service: UsageService = Depends(get_usage_service),
 ) -> StreamingResponse:
     filters = PropertyFilters(
         city=city,
@@ -151,7 +196,22 @@ async def export_properties(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    account_id, user_id = _usage_context(request)
+    try:
+        await usage_service.ensure_within_plan('properties.export', account_id=account_id)
+    except UsageLimitError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+
     properties = await service.export_properties(filters)
+    await usage_service.log_event(
+        'properties.export',
+        payload={
+            'filters': filters.model_dump(exclude_none=True),
+            'export_count': len(properties),
+        },
+        account_id=account_id,
+        user_id=user_id,
+    )
 
     fieldnames = [
         'property_id',
@@ -215,6 +275,17 @@ async def export_properties(
 
 
 @router.post('/refresh-cache', status_code=202)
-async def refresh_cache(service: PropertyService = Depends(get_property_service)) -> dict[str, str]:
+async def refresh_cache(
+    request: Request,
+    service: PropertyService = Depends(get_property_service),
+    usage_service: UsageService = Depends(get_usage_service),
+) -> dict[str, str]:
+    account_id, user_id = _usage_context(request)
+    try:
+        await usage_service.ensure_within_plan('properties.refresh_cache', account_id=account_id)
+    except UsageLimitError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+
     await service.refresh_cache(force=True)
+    await usage_service.log_event('properties.refresh_cache', account_id=account_id, user_id=user_id)
     return {'status': 'cache refreshed'}
