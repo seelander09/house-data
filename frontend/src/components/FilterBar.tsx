@@ -69,7 +69,7 @@ export const FilterBar = () => {
             onChange={handleText('state')}
             maxLength={2}
             textTransform="uppercase"
-            placeholder="TX"
+            placeholder="State"
           />
         </FormControl>
         <FormControl maxW="200px">
@@ -77,16 +77,16 @@ export const FilterBar = () => {
             Min Equity ($)
           </FormLabel>
           <NumberInput value={filters.min_equity ?? ''} min={0} onChange={handleNumber('min_equity')}>
-            <NumberInputField placeholder="100000" />
+            <NumberInputField placeholder="" />
           </NumberInput>
         </FormControl>
         <FormControl maxW="160px">
           <FormLabel fontSize="sm" color="gray.600">
             Min Score
           </FormLabel>
-          <NumberInput value={filters.min_score ?? ''} min={0} max={100} onChange={handleNumber('min_score')}>
-            <NumberInputField placeholder="70" />
-          </NumberInput>
+            <NumberInput value={filters.min_score ?? ''} min={0} max={100} onChange={handleNumber('min_score')}>
+              <NumberInputField placeholder="" />
+            </NumberInput>
         </FormControl>
         <FormControl maxW="200px">
           <FormLabel fontSize="sm" color="gray.600">
@@ -126,9 +126,9 @@ export const FilterBar = () => {
             <FormLabel fontSize="sm" color="gray.600">
               Min Value Gap ($)
             </FormLabel>
-            <NumberInput value={filters.min_value_gap ?? ''} min={0} onChange={handleNumber('min_value_gap')}>
-              <NumberInputField placeholder="50000" />
-            </NumberInput>
+          <NumberInput value={filters.min_value_gap ?? ''} min={0} onChange={handleNumber('min_value_gap')}>
+            <NumberInputField placeholder="" />
+          </NumberInput>
           </FormControl>
           <HStack spacing={4} align="flex-end">
             <FormControl maxW="180px">
@@ -136,7 +136,7 @@ export const FilterBar = () => {
                 Min Market Value
               </FormLabel>
               <NumberInput value={filters.min_market_value ?? ''} min={0} onChange={handleNumber('min_market_value')}>
-                <NumberInputField placeholder="250000" />
+              <NumberInputField placeholder="" />
               </NumberInput>
             </FormControl>
             <FormControl maxW="180px">
@@ -144,7 +144,7 @@ export const FilterBar = () => {
                 Max Market Value
               </FormLabel>
               <NumberInput value={filters.max_market_value ?? ''} min={0} onChange={handleNumber('max_market_value')}>
-                <NumberInputField placeholder="750000" />
+              <NumberInputField placeholder="" />
               </NumberInput>
             </FormControl>
           </HStack>
@@ -154,7 +154,7 @@ export const FilterBar = () => {
                 Min Assessed Value
               </FormLabel>
               <NumberInput value={filters.min_assessed_value ?? ''} min={0} onChange={handleNumber('min_assessed_value')}>
-                <NumberInputField placeholder="200000" />
+              <NumberInputField placeholder="" />
               </NumberInput>
             </FormControl>
             <FormControl maxW="180px">
@@ -162,7 +162,7 @@ export const FilterBar = () => {
                 Max Assessed Value
               </FormLabel>
               <NumberInput value={filters.max_assessed_value ?? ''} min={0} onChange={handleNumber('max_assessed_value')}>
-                <NumberInputField placeholder="600000" />
+              <NumberInputField placeholder="" />
               </NumberInput>
             </FormControl>
           </HStack>
@@ -176,7 +176,7 @@ export const FilterBar = () => {
                 onChange={handleNumber('center_latitude')}
                 step={0.0001}
               >
-                <NumberInputField placeholder="30.2672" />
+                <NumberInputField placeholder="" />
               </NumberInput>
             </FormControl>
             <FormControl maxW="200px">
@@ -188,7 +188,7 @@ export const FilterBar = () => {
                 onChange={handleNumber('center_longitude')}
                 step={0.0001}
               >
-                <NumberInputField placeholder="-97.7431" />
+                <NumberInputField placeholder="" />
               </NumberInput>
             </FormControl>
             <FormControl maxW="160px">
@@ -196,7 +196,7 @@ export const FilterBar = () => {
                 Radius (mi)
               </FormLabel>
               <NumberInput value={filters.radius_miles ?? ''} min={0} step={0.5} onChange={handleNumber('radius_miles')}>
-                <NumberInputField placeholder="5" />
+                <NumberInputField placeholder="" />
               </NumberInput>
             </FormControl>
           </HStack>

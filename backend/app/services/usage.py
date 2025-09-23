@@ -568,12 +568,23 @@ class UsageService:
             last_sent_at = (
                 datetime.fromisoformat(row['last_sent_at']) if row and row['last_sent_at'] else None
             )
-            if last_status == status and last_sent_at and now - last_sent_at < self._alert_min_interval:
-                return None
             message = (
                 f"Plan '{plan.display_name}' usage {status.upper()} for {event_type}: "
                 f"{remaining} of {limit} actions remaining in {self._plan_window_days}-day window"
             )
+            if last_status == status and last_sent_at and now - last_sent_at < self._alert_min_interval:
+                cursor_msg = connection.execute(
+                    """
+                    SELECT message FROM usage_alerts
+                    WHERE account_id = ? AND event_type = ?
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """,
+                    (account_id, event_type),
+                )
+                row_msg = cursor_msg.fetchone()
+                existing_message = row_msg['message'] if row_msg else message
+                return PlanAlert(event_type=event_type, status=status, message=existing_message)
             connection.execute(
                 """
                 INSERT INTO usage_alert_state (account_id, event_type, status, last_sent_at)

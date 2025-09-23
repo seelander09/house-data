@@ -70,6 +70,19 @@ const createMemoryStorage = (): Storage => {
   } as Storage;
 };
 
+const storageKey = 'lead-radar-filters';
+
+const storage = createJSONStorage(() => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+  } catch (error) {
+    // ignore and fall back to in-memory storage
+  }
+  return createMemoryStorage();
+});
+
 const createFilterState: StateCreator<FilterState> = (set, get) => ({
   filters: { ...defaultFilters },
   presets: {},
@@ -102,7 +115,14 @@ const createFilterState: StateCreator<FilterState> = (set, get) => ({
         offset,
       },
     })),
-  reset: () => set({ filters: { ...defaultFilters } }),
+  reset: () => {
+    set({ filters: { ...defaultFilters } });
+    try {
+      storage.removeItem(storageKey);
+    } catch (error) {
+      // ignore storage removal errors
+    }
+  },
   savePreset: (name) => {
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -123,18 +143,9 @@ const createFilterState: StateCreator<FilterState> = (set, get) => ({
 });
 
 const persistOptions: PersistOptions<FilterState> = {
-  name: 'lead-radar-filters',
+  name: storageKey,
   version: 1,
-  storage: createJSONStorage(() => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return window.localStorage;
-      }
-    } catch (error) {
-      // ignore and fall back to in-memory storage
-    }
-    return createMemoryStorage();
-  }),
+  storage,
   merge: (persistedState, currentState) => {
     if (!persistedState) {
       return currentState;
